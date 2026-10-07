@@ -23,6 +23,23 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textMuted = Color(0xFF94A3B8);
 
+  // Tutor Mobile Design Custom Palette
+  static const Color tutorPrimary = Color(0xFF0050CB);
+  static const Color tutorPrimaryContainer = Color(0xFF1D68F5);
+  static const Color tutorSecondary = Color(0xFF006C49);
+  static const Color tutorSecondaryContainer = Color(0xFF6CF8BB);
+  static const Color tutorSurface = Color(0xFFF8F9FF);
+  static const Color tutorSurfaceContainer = Color(0xFFE5EEFF);
+  static const Color tutorSurfaceHigh = Color(0xFFDCE9FF);
+  static const Color tutorOnSurface = Color(0xFF0B1C30);
+  static const Color tutorOnSurfaceVariant = Color(0xFF424655);
+  static const Color tutorError = Color(0xFFBA1A1A);
+  static const Color tutorErrorContainer = Color(0xFFFFDAD6);
+  static const Color tutorWarningBg = Color(0xFFFEF3C7);
+  static const Color tutorWarningText = Color(0xFF92400E);
+  static const Color tutorSuccessBg = Color(0xFFD1FAE5);
+  static const Color tutorSuccessText = Color(0xFF065F46);
+
   // Dark Palette
   static const Color darkBackground = Color(0xFF0F172A);
   static const Color darkSurface = Color(0xFF1E293B);
