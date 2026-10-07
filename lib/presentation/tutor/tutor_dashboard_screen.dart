@@ -104,7 +104,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Session Completed',
                         style: TextStyle(
                           fontSize: 18,
@@ -173,7 +173,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
 
   Widget _detailRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.between,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.tutorOnSurfaceVariant)),
         Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.tutorOnSurface)),
@@ -275,7 +275,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
             Expanded(
               child: ListView.separated(
                 itemCount: classes.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (ctx, i) {
                   final cls = classes[i];
                   final count = studentCounts[cls.classId] ?? 30;
@@ -478,7 +478,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
                       child: Image.network(
                         'https://lh3.googleusercontent.com/aida-public/AB6AXuDoSvBlrWIPm0psX66h3fcx9mz7rRxzJ_zHveRhmTA-pij2H7VGjwhIp9R9U9mfbq0hpGGTk6foPnKQJkrTZ-SOxMw-ngz0J89jjPBC9VS0PzEoqbJLHy3TuZhAvjuO8vT19GbhxsvPqdPTuNNODG91nn0gYEN6s9yb6gAy8WH9zUZ4m-BJOVXxo0aLhFT6oG5SYwcY1qqH5qx0DlCtc3JKesbtcR2AXsEysgVQtsA',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (context, error, stackTrace) => Container(
                           color: AppTheme.tutorPrimary.withAlpha(20),
                           child: const Icon(Icons.person_rounded, color: AppTheme.tutorPrimary, size: 28),
                         ),
@@ -532,7 +532,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.between,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
@@ -675,7 +675,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.between,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
@@ -724,7 +724,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
             itemCount: overview.classes.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (context, index) => const SizedBox(width: 14),
             itemBuilder: (context, index) {
               final cls = overview.classes[index];
               final count = overview.studentCounts[cls.classId] ?? 30;
@@ -763,7 +763,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.between,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
@@ -881,7 +881,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.between,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
@@ -932,7 +932,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: sessions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final session = sessions[index];
               return _buildSessionCard(session);
@@ -1088,7 +1088,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
           const SizedBox(height: 10),
           // Bottom Row: Time Slot + Action Button
           Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
@@ -1236,7 +1236,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.between,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
             Text(
               'Campus Activity',
@@ -1294,7 +1294,7 @@ class _TutorDashboardScreenState extends ConsumerState<TutorDashboardScreen> {
             Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (context, error, stackTrace) => Container(
                 color: const Color(0xFFDCE9FF),
                 child: const Icon(Icons.school_rounded, color: AppTheme.tutorPrimary, size: 32),
               ),

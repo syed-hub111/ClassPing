@@ -81,7 +81,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
                   ? const Center(child: Text('No classes found.'))
                   : ListView.separated(
                       itemCount: classes.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
                       itemBuilder: (ctx, i) {
                         final cls = classes[i];
                         return Container(
@@ -163,7 +163,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
             ),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Attendance Alerts',
@@ -241,7 +241,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.between,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
@@ -272,6 +272,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
   void _showSettingsSheet() {
     final authState = ref.watch(authProvider);
     final user = authState.userProfile;
+    final router = GoRouter.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -321,7 +322,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
               title: const Text('Attendance Push Notifications', style: TextStyle(fontSize: 14)),
               trailing: Switch.adaptive(
                 value: true,
-                activeColor: AppTheme.tutorPrimary,
+                activeTrackColor: AppTheme.tutorPrimary,
                 onChanged: (_) {},
               ),
             ),
@@ -347,7 +348,7 @@ class _TutorShellScreenState extends ConsumerState<TutorShellScreen> {
                 onPressed: () async {
                   Navigator.pop(ctx);
                   await ref.read(authProvider.notifier).signOut();
-                  if (context.mounted) context.go('/login');
+                  if (mounted) router.go('/login');
                 },
               ),
             ),
