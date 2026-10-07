@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "682714871414",
+    "project_id": "class-ping-66823",
+    "storage_bucket": "class-ping-66823.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:682714871414:android:d339c7e9ce93e975761157",
+        "android_client_info": {
+          "package_name": "com.classping.classping"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "682714871414-ncbupqvtvcvhufqreld7fq0nmqjndr5o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.classping.classping",
+            "certificate_hash": "22fe68d405cd1199d008cf3aff18879400b2a364"
+          }
+        },
+        {
+          "client_id": "682714871414-ngdunq34eeamad19jj4icadkikfrps8m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByQBebIblmO0_jA46ezsM_F1TV6KGdUNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "682714871414-ngdunq34eeamad19jj4icadkikfrps8m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "682714871414-4u3h3rq3r9614en60tkocfa3l608i7bt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.classping.classping"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

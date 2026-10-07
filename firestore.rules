@@ -1,0 +1,233 @@
+rules_version = '2';
+
+// STRICT PRODUCTION SECURITY RULES: CLOUD FIRESTORE
+// Least-privilege authorization for ClassPing Tuition Attendance Management System.
+// Client requests are untrusted; all data access is validated against authenticated UID
+// and authoritative database-level role registries.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------
+    // Authentication & Core Identity Helpers
+    // -------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Authoritative Admin Registry: Must exist in admins/{uid} and be ACTIVE, or designated admin email
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'admin@classping.com') ||
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.status == 'ACTIVE')
+      );
+    }
+
+    // Authoritative Tutor Registry: Must exist in tutors/{uid} and be ACTIVE
+    function isTutor() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/tutors/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/tutors/$(request.auth.uid)).data.status == 'ACTIVE';
+    }
+
+    // Tutor Class Assignment: Verifies tutor assignment from admin-controlled registries
+    function isTutorAuthorizedForClass(classId) {
+      return isTutor() && (
+        ('authorizedClassIds' in get(/databases/$(database)/documents/tutors/$(request.auth.uid)).data &&
+         get(/databases/$(database)/documents/tutors/$(request.auth.uid)).data.authorizedClassIds is list &&
+         get(/databases/$(database)/documents/tutors/$(request.auth.uid)).data.authorizedClassIds.hasAny([classId]))
+        ||
+        (exists(/databases/$(database)/documents/classes/$(classId)) &&
+         'authorizedTutorIds' in get(/databases/$(database)/documents/classes/$(classId)).data &&
+         get(/databases/$(database)/documents/classes/$(classId)).data.authorizedTutorIds is list &&
+         get(/databases/$(database)/documents/classes/$(classId)).data.authorizedTutorIds.hasAny([request.auth.uid]))
+      );
+    }
+
+    // Parent Child Ownership: Authoritative check against student.parentIds or parent phone
+    function isParentOfStudent(studentData) {
+      return isSignedIn() && (
+        ('parentIds' in studentData &&
+         studentData.parentIds is list &&
+         studentData.parentIds.hasAny([request.auth.uid])) ||
+        (request.auth.token.phone_number != null &&
+         'parentMobileNumber' in studentData &&
+         (studentData.parentMobileNumber == request.auth.token.phone_number ||
+          '+91' + studentData.parentMobileNumber == request.auth.token.phone_number ||
+          request.auth.token.phone_number == ('+91' + studentData.parentMobileNumber)))
+      );
+    }
+
+    function isParentOfStudentId(studentId) {
+      return exists(/databases/$(database)/documents/students/$(studentId)) &&
+        isParentOfStudent(get(/databases/$(database)/documents/students/$(studentId)).data);
+    }
+
+    // -------------------------------------------------------------
+    // Attendance & Opportunity Validation Helpers
+    // -------------------------------------------------------------
+    function isValidAttendanceRecordCreate() {
+      let data = request.resource.data;
+      return isTutor() &&
+        data.tutorUid == request.auth.uid &&
+        isTutorAuthorizedForClass(data.classId) &&
+        // Opportunity relationship & state
+        exists(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)) &&
+        get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.classId == data.classId &&
+        (get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.status == 'PENDING' ||
+         get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.status == 'MISSED_DEADLINE') &&
+        // Student relationship & state
+        exists(/databases/$(database)/documents/students/$(data.studentId)) &&
+        get(/databases/$(database)/documents/students/$(data.studentId)).data.currentClassId == data.classId &&
+        get(/databases/$(database)/documents/students/$(data.studentId)).data.status == 'ACTIVE' &&
+        // Status & immutability constraints
+        data.status in ['PRESENT', 'LATE', 'ABSENT'] &&
+        data.sessionStatus == 'LOCKED' &&
+        data.deadlineStatus in ['WITHIN_DEADLINE', 'MISSED_DEADLINE'] &&
+        data.recordId == data.opportunityId + '_' + data.studentId &&
+        data.sessionId == data.opportunityId &&
+        data.opportunityId == get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.opportunityId &&
+        data.academicYearId == get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.academicYearId &&
+        data.sessionDate == get(/databases/$(database)/documents/expectedAttendanceOpportunities/$(data.opportunityId)).data.sessionDate;
+    }
+
+    function isValidTutorOpportunityUpdate() {
+      let incoming = request.resource.data;
+      let existing = resource.data;
+      
+      return isTutor() &&
+        isTutorAuthorizedForClass(existing.classId) &&
+        // State machine: Only PENDING or MISSED_DEADLINE can transition to COMPLETED
+        (existing.status == 'PENDING' || existing.status == 'MISSED_DEADLINE') &&
+        incoming.status == 'COMPLETED' &&
+        incoming.deadlineStatus in ['WITHIN_DEADLINE', 'MISSED_DEADLINE'] &&
+        // Strict immutability of all scheduling, class, and deadline fields
+        incoming.opportunityId == existing.opportunityId &&
+        incoming.classId == existing.classId &&
+        incoming.className == existing.className &&
+        incoming.academicYearId == existing.academicYearId &&
+        incoming.sessionDate == existing.sessionDate &&
+        incoming.slotNumber == existing.slotNumber &&
+        incoming.attendanceDeadline == existing.attendanceDeadline &&
+        incoming.allowedCompletionDeadline == existing.allowedCompletionDeadline &&
+        incoming.createdAt == existing.createdAt;
+    }
+
+    function isValidNotificationCreate(notificationId) {
+      let data = request.resource.data;
+      return isTutor() &&
+        exists(/databases/$(database)/documents/students/$(data.studentId)) &&
+        get(/databases/$(database)/documents/students/$(data.studentId)).data.status == 'ACTIVE' &&
+        isTutorAuthorizedForClass(get(/databases/$(database)/documents/students/$(data.studentId)).data.currentClassId) &&
+        (data.status == 'ABSENT' || data.status == 'LATE') &&
+        data.readAt == null &&
+        data.notificationId == notificationId;
+    }
+
+    // -------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------
+
+    // A. User Profiles
+    match /users/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      
+      allow create: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.uid == uid &&
+        (request.resource.data.role == 'PARENT' || request.resource.data.role == 'TUTOR') &&
+        request.resource.data.accountStatus == 'ACTIVE'
+      );
+      
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.uid == uid
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // B. Administrator Registry (Writable by Admin)
+    match /admins/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow write: if isAdmin();
+    }
+
+    // C. Tutor Profiles & Authorization
+    match /tutors/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == uid &&
+        (
+          request.resource.data.email == request.auth.token.email ||
+          request.resource.data.email == ('www.' + request.auth.token.email) ||
+          ('email' in resource.data && (
+            resource.data.email == request.auth.token.email ||
+            resource.data.email == ('www.' + request.auth.token.email)
+          ))
+        )
+      );
+      allow delete: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.email == request.auth.token.email ||
+          resource.data.email == ('www.' + request.auth.token.email)
+        )
+      );
+    }
+
+    // D. Students
+    match /students/{studentId} {
+      allow read: if isAdmin()
+        || (isTutor() && isTutorAuthorizedForClass(resource.data.currentClassId))
+        || isParentOfStudent(resource.data);
+      allow write: if isAdmin();
+    }
+
+    // E. Classes
+    match /classes/{classId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // F. Academic Years
+    match /academicYears/{academicYearId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // G. Expected Attendance Opportunities
+    match /expectedAttendanceOpportunities/{opportunityId} {
+      allow read: if isAdmin() || (isTutor() && isTutorAuthorizedForClass(resource.data.classId));
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isValidTutorOpportunityUpdate();
+      allow delete: if isAdmin();
+    }
+
+    // H. Attendance Records
+    match /attendanceRecords/{recordId} {
+      allow read: if isAdmin()
+        || (isTutor() && isTutorAuthorizedForClass(resource.data.classId))
+        || isParentOfStudentId(resource.data.studentId);
+      allow create: if isAdmin() || isValidAttendanceRecordCreate();
+      allow update, delete: if isAdmin();
+    }
+
+    // I. Parent Notifications
+    match /parentNotifications/{notificationId} {
+      allow read: if isAdmin() || isParentOfStudentId(resource.data.studentId);
+      allow create: if isAdmin() || isValidNotificationCreate(notificationId);
+      
+      // Parents can ONLY update 'readAt' on their own child's notification
+      allow update: if isAdmin() || (
+        isParentOfStudentId(resource.data.studentId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+      );
+      
+      allow delete: if isAdmin() || isParentOfStudentId(resource.data.studentId);
+    }
+  }
+}
